@@ -777,13 +777,13 @@
       <ol class="paysteps">
         <li>Open GCash and tap <b>Send</b> → <b>Express Send</b>.</li>
         <li>Send exactly <b id="payAmount2">₱150.00</b> to the number above.</li>
-        <li>Screenshot the receipt and upload it here — we read it automatically.</li>
+        <li id="payStep3">Screenshot the receipt and upload it here — we read it automatically.</li>
       </ol>
       <label class="btn quiet" for="payFile" id="payFileBtn">Upload GCash screenshot</label>
       <input type="file" id="payFile" accept="image/*" style="display:none" onchange="pickPayFile(this)">
       <img class="shot-preview" id="payPreview" alt="Your GCash receipt" style="display:none">
       <input class="payinput" id="payRef" inputmode="numeric" maxlength="20" style="display:none"
-             placeholder="GCash reference no. (optional)">
+             placeholder="GCash reference no. (13 digits)">
       <button class="btn gold" id="paySubmit" disabled onclick="submitPayment()">Send for verification</button>
       <button class="btn quiet slim" id="payCancel" style="display:none" onclick="cancelPrepay()">Cancel</button>
     </div>
@@ -906,6 +906,7 @@
     <button data-s="orders" onclick="adminSection('orders')">Shop orders</button>
     <button data-s="partners" onclick="adminSection('partners')">Partners</button>
   </div>
+  <div class="ainfo" id="adminRcBar" style="display:flex;gap:6px;align-items:center;flex-wrap:wrap"></div>
   <div class="ainfo" id="adminShopBar" style="display:none"></div>
   <div class="alist" id="adminShop" style="display:none"></div>
   <div class="tabs" id="adminTabs">
@@ -1000,7 +1001,7 @@ const CPU_THUMB_LANDSCAPE = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/
    Paste your Apps Script /exec URL below. Same URL as download.html.
    ══════════════════════════════════════════════════════════ */
 const API_URL = 'https://script.google.com/macros/s/AKfycbwpIg9O4iA-jCMN2HWIVMFgnwnl_piIRfpL6AokEOwjfJE5Oros6bxvdqKOWGa9FD8QCw/exec';
-const NEEDS_API_VERSION = 37;
+const NEEDS_API_VERSION = 38;
 /* The package: 2 AI photos + 1 collage. Fixed here as well as on the server, so
    a phone holding an old cached config (or an older server) still shoots 2. */
 const SHOTS = 2;
@@ -3778,7 +3779,10 @@ function shopRenderCart(){
       '<div style="font-size:14px;line-height:1.55">Send exactly <b>' + peso(total) + '</b> to <b>' + num + '</b>' +
         (P.name ? ' (' + esc(P.name) + ')' : '') +
         ' <button class="sbtn" style="padding:4px 10px;font-size:12px" onclick="navigator.clipboard&&navigator.clipboard.writeText(\'' + P.number + '\')">Copy</button>' +
-        ', then upload the screenshot of your receipt — we read it automatically.</div>' +
+        (manualReceipts() ? ', then upload the screenshot of your receipt and type its reference number.</div>' +
+          '<input id="shopRef" inputmode="numeric" maxlength="20" placeholder="GCash reference no. (13 digits)" value="' +
+          esc(SHOP.ref || '') + '" oninput="SHOP.ref=this.value">'
+          : ', then upload the screenshot of your receipt — we read it automatically.</div>') +
       '<label class="sbtn" style="text-align:center">' + (SHOP.receipt ? 'Choose a different screenshot' : 'Upload GCash screenshot') +
         '<input type="file" accept="image/*" style="display:none" onchange="shopReceipt(this)"></label>' +
       (SHOP.receipt ? '<img src="' + SHOP.receipt + '" alt="" style="max-height:220px;object-fit:contain;border-radius:10px">' : '') +
@@ -3813,18 +3817,21 @@ function placeShopOrder(){
   if (SHOP.cart[PRINT_ID] && !/^\d{6}$/.test(SHOP.printRef || '')){
     warn.innerHTML = '<p class="warn">Type the 6-digit PIN of the card you want printed.</p>'; return;
   }
+  if (manualReceipts() && !validRef(SHOP.ref)){
+    warn.innerHTML = '<p class="warn">Please type the reference number from your GCash receipt (usually 13 digits).</p>'; return;
+  }
   const btn = document.getElementById('shopPlace');
-  SHOP.busy = true; btn.disabled = true; btn.textContent = 'Reading your receipt…'; warn.innerHTML = '';
+  SHOP.busy = true; btn.disabled = true; btn.textContent = manualReceipts() ? 'Sending…' : 'Reading your receipt…'; warn.innerHTML = '';
   api('placeOrder', {
     deviceId: DEVICE, name: name, contact: contact, note: SHOP.note || '',
     items: Object.keys(SHOP.cart).map(k => ({ id: k, qty: SHOP.cart[k], ref: k === PRINT_ID ? SHOP.printRef : '' })),
-    imageDataUrl: SHOP.receipt
+    imageDataUrl: SHOP.receipt, refNo: SHOP.ref || ''
   }).then(r => {
     SHOP.busy = false;
     try { const L = JSON.parse(localStorage.getItem(SHOP_ORDERS_KEY) || '[]');
           L.unshift({ t: r.tracking, d: Date.now(), total: r.total });
           localStorage.setItem(SHOP_ORDERS_KEY, JSON.stringify(L.slice(0, 20))); } catch (e) {}
-    SHOP.cart = {}; SHOP.receipt = ''; SHOP.note = ''; shopSaveCart();
+    SHOP.cart = {}; SHOP.receipt = ''; SHOP.note = ''; SHOP.ref = ''; shopSaveCart();
     SHOP.loadedAt = 0;                                // stock changed
     document.getElementById('shopDone').innerHTML =
       '<div class="card" style="text-align:center;align-items:center">' +
@@ -4153,6 +4160,7 @@ function adminSetEvent(){
 
 function openAdmin(){
   fillAdminEvents();
+  adminRcBar();
   adminSection(ASHOP.sec || 'pay');
   document.getElementById('adminPanel').classList.add('on');
   adminLoad(true);
@@ -4186,7 +4194,31 @@ function adminLoad(show){
   });
 }
 
+/** Receipt check switch: OCR (AI, small cost per receipt) or Manual (free, staff approve all). */
+function adminRcBar(mode){
+  ADMIN.rc = mode || ADMIN.rc || (CFG.payment || {}).receiptCheck || 'OCR';
+  const b = (m, t) => '<button class="btn ' + (ADMIN.rc === m ? 'gold' : 'quiet') +
+    '" style="width:auto;padding:7px 11px;font-size:12.5px" onclick="adminSetRc(\'' + m + '\')">' + t + '</button>';
+  document.getElementById('adminRcBar').innerHTML = '<span>Receipt check:</span>' +
+    b('OCR', 'OCR reader (AI)') + b('MANUAL', 'Manual (no AI cost)') +
+    '<span style="font-size:11.5px;width:100%">' + (ADMIN.rc === 'MANUAL'
+      ? 'Customers type the Ref No.; duplicates are still blocked; staff approve every payment.'
+      : 'AI reads each screenshot; clean receipts are approved instantly.') + '</span>';
+}
+function adminSetRc(mode){
+  if (mode === ADMIN.rc) return;
+  if (!confirm(mode === 'MANUAL'
+      ? 'Switch to MANUAL? No AI reads receipts; customers type the reference number and staff must approve every payment.'
+      : 'Switch to the OCR reader? AI reads every receipt (a small cost each) and approves clean ones instantly.')) return;
+  api('adminSetReceiptCheck', { token: ADMIN.token, mode: mode }).then(r => {
+    if (CFG.payment) CFG.payment.receiptCheck = r.receiptCheck;
+    if (SHOP.data && SHOP.data.gcash) SHOP.data.gcash.receiptCheck = r.receiptCheck;
+    adminRcBar(r.receiptCheck);
+  }).catch(e => alert(e.message));
+}
+
 function adminRender(r){
+  adminRcBar(r.receiptCheck);
   const items = r.items || [];
   const pending = items.filter(p => p.status === 'PENDING').length;
   const num = String(r.number || '').replace(/^(\d{4})(\d{3})(\d{4})$/, '$1 $2 $3');
@@ -4279,7 +4311,21 @@ function openPay(){
 }
 
 const PAY_DEFAULTS = { amount: 100, number: '09954948237', name: '' };
+/** Settings → ReceiptCheck: OCR (AI reads the screenshot) or MANUAL (customer types the ref no.). */
+function manualReceipts(){
+  const c = (SHOP.data && SHOP.data.gcash && SHOP.data.gcash.receiptCheck) || (CFG.payment || {}).receiptCheck;
+  return c === 'MANUAL';
+}
+function validRef(v){ const d = String(v || '').replace(/\D/g, ''); return d.length >= 10 && d.length <= 16; }
+function applyReceiptMode(){
+  const man = manualReceipts();
+  document.getElementById('payRef').style.display = man ? '' : 'none';
+  document.getElementById('payStep3').textContent = man
+    ? 'Screenshot the receipt, upload it here and type its reference number (Ref No.).'
+    : 'Screenshot the receipt and upload it here — we read it automatically.';
+}
 function fillPayCard(){
+  applyReceiptMode();
   const P = Object.assign({}, PAY_DEFAULTS, CFG.payment || {});
   const num = String(P.number || '');
   document.getElementById('payAmount').textContent = peso(P.amount);
@@ -4418,7 +4464,12 @@ function submitPayment(){
   if (!payImage) return;
   const btn = document.getElementById('paySubmit');
   const warn = document.getElementById('payWarn');
-  btn.disabled = true; btn.textContent = 'Reading your receipt…'; warn.style.display = 'none';
+  if (manualReceipts() && !validRef(document.getElementById('payRef').value)){
+    warn.style.display = 'block';
+    warn.textContent = 'Please type the reference number from your GCash receipt (usually 13 digits).';
+    return;
+  }
+  btn.disabled = true; btn.textContent = manualReceipts() ? 'Sending…' : 'Reading your receipt…'; warn.style.display = 'none';
   const ref = document.getElementById('payRef').value.trim();
   (PAY_MODE === 'prepay'
     ? api('submitPrepay', { pin: PREPAY_PIN, deviceId: DEVICE, imageDataUrl: payImage, refNo: ref })
