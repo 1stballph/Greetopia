@@ -52,6 +52,17 @@
     background:var(--surface);color:var(--muted);display:grid;place-items:center;cursor:pointer}
   .top .lock:active{transform:scale(.95)}
 
+  /* ---- checkout: printed card + shop note ---- */
+  .printnote{display:flex;gap:12px;align-items:flex-start;border-radius:16px;padding:14px;
+    background:linear-gradient(135deg,rgba(238,63,138,.14),rgba(123,92,240,.14));border:1px solid rgba(238,63,138,.45)}
+  .printnote .pn-ic{font-size:28px;line-height:1}
+  .printnote b{font-size:15px}
+  .printnote p{margin:6px 0 0;font-size:13.5px;line-height:1.5;color:var(--text);opacity:.9}
+  .printnote .shopcta{margin-top:10px;display:inline-flex;align-items:center;gap:6px;border:0;border-radius:999px;
+    padding:10px 16px;background:linear-gradient(135deg,#EE3F8A,#7B5CF0);color:#fff;
+    font:700 14px 'Inter',sans-serif;cursor:pointer;box-shadow:0 6px 16px rgba(238,63,138,.35)}
+  .printnote .shopcta:active{transform:scale(.97)}
+
   /* ---- header Shop button ---- */
   .top .shopbtn{height:34px;flex:none;display:flex;align-items:center;gap:5px;padding:0 11px;border-radius:999px;
     border:0;background:linear-gradient(135deg,#EE3F8A,#7B5CF0);color:#fff;font:700 13px 'Inter',sans-serif;
@@ -711,6 +722,16 @@
       <div class="btnrow">
         <button class="btn quiet slim" id="newMsgBtn" onclick="newMessage()">Write a different message</button>
         <button class="btn quiet slim" onclick="applyLetter()">Update card</button>
+      </div>
+    </div>
+    <div class="printnote">
+      <div class="pn-ic">💌</div>
+      <div>
+        <b>Want to send a printed card?</b>
+        <p>Have your card printed at the <b>CPU Printing Press</b> and delivered to your
+          <b>School Canteen / Cafeteria</b> the next day upon ordering.</p>
+        <p>Please also visit the Shop to select valuable gifts to add to this card for your special person.</p>
+        <button class="shopcta" onclick="openShop()"><span>🛍️</span> Visit the Shop</button>
       </div>
     </div>
     <div style="flex:1"></div>
