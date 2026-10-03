@@ -1,0 +1,12 @@
+{
+  "name": "Greetopia — Every Occasion, A Beautiful Creation.",
+  "short_name": "Greetopia",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#0E1017",
+  "icons": [
+    { "src": "greetopia_icon_192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "greetopia_icon_512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }
+  ]
+}
