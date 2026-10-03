@@ -62,6 +62,9 @@
     padding:10px 16px;background:linear-gradient(135deg,#EE3F8A,#7B5CF0);color:#fff;
     font:700 14px 'Inter',sans-serif;cursor:pointer;box-shadow:0 6px 16px rgba(238,63,138,.35)}
   .printnote .shopcta:active{transform:scale(.97)}
+  .printnote .pn-btns{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+  .printnote .pn-btns .shopcta{margin-top:0}
+  .printnote .shopcta.alt{background:rgba(255,255,255,.12);box-shadow:none;border:1px solid rgba(255,255,255,.25)}
 
   /* ---- header Shop button ---- */
   .top .shopbtn{height:34px;flex:none;display:flex;align-items:center;gap:5px;padding:0 11px;border-radius:999px;
@@ -143,6 +146,13 @@
   .shop .floatcart.on{display:block}
   .shop .floatcart button{width:100%;padding:15px;border-radius:999px;border:0;background:#17398C;color:#fff;
     font:700 16px 'Inter';box-shadow:0 10px 26px rgba(23,57,140,.35);cursor:pointer}
+  .shop .partner{position:absolute;inset:0;z-index:5;background:#fff;display:none;flex-direction:column}
+  .shop .partner.on{display:flex;animation:fadeUp .35s both}
+  .shop .partner .pbar{display:flex;align-items:center;gap:8px;padding:calc(env(safe-area-inset-top) + 10px) 12px 10px;
+    border-bottom:1px solid #eee;background:#fff}
+  .shop .partner .pbar b{flex:1;text-align:center;font-size:14px;color:#1B2E7A;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .shop .partner .pbar .sbtn{padding:8px 12px;font-size:13px;text-decoration:none}
+  .shop .partner iframe{flex:1;width:100%;border:0}
   @media (prefers-reduced-motion:reduce){.shop.on,.shop .awning,.shop .sitem,.shop .pick{animation:none}}
 
   /* ---- staff: shop management ---- */
@@ -731,7 +741,10 @@
         <p>Have your card printed at the <b>CPU Printing Press</b> and delivered to your
           <b>School Canteen / Cafeteria</b> the next day upon ordering.</p>
         <p>Please also visit the Shop to select valuable gifts to add to this card for your special person.</p>
-        <button class="shopcta" onclick="openShop()"><span>🛍️</span> Visit the Shop</button>
+        <div class="pn-btns">
+          <button class="shopcta" onclick="addPrintCard()"><span>💌</span> Add printed card · ₱50</button>
+          <button class="shopcta alt" onclick="openShop()"><span>🛍️</span> Visit the Shop</button>
+        </div>
       </div>
     </div>
     <div style="flex:1"></div>
@@ -798,6 +811,18 @@
     <div class="pinchip" id="donePin"></div>
     <p class="note">Scan the QR with another phone, or tap the files below.</p>
     <div class="files" id="fileList"></div>
+    <div class="printnote">
+      <div class="pn-ic">💌</div>
+      <div>
+        <b>Send it as a printed card</b>
+        <p>Printed at the <b>CPU Printing Press</b> and delivered to your <b>School Canteen / Cafeteria</b>
+          the next day — ₱50 per piece. Add a gift from the Shop for your special person.</p>
+        <div class="pn-btns">
+          <button class="shopcta" onclick="addPrintCard()"><span>💌</span> Add printed card · ₱50</button>
+          <button class="shopcta alt" onclick="openShop()"><span>🛍️</span> Visit the Shop</button>
+        </div>
+      </div>
+    </div>
     <div style="flex:1"></div>
     <button class="btn gold" onclick="endSession()">I've saved them — end session</button>
     <p class="note" id="doneNote">Ending closes this PIN. Your download page keeps working.</p>
@@ -879,6 +904,7 @@
     <button class="on" data-s="pay" onclick="adminSection('pay')">GCash payments</button>
     <button data-s="items" onclick="adminSection('items')">Shop items</button>
     <button data-s="orders" onclick="adminSection('orders')">Shop orders</button>
+    <button data-s="partners" onclick="adminSection('partners')">Partners</button>
   </div>
   <div class="ainfo" id="adminShopBar" style="display:none"></div>
   <div class="alist" id="adminShop" style="display:none"></div>
@@ -974,7 +1000,7 @@ const CPU_THUMB_LANDSCAPE = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/
    Paste your Apps Script /exec URL below. Same URL as download.html.
    ══════════════════════════════════════════════════════════ */
 const API_URL = 'https://script.google.com/macros/s/AKfycbwpIg9O4iA-jCMN2HWIVMFgnwnl_piIRfpL6AokEOwjfJE5Oros6bxvdqKOWGa9FD8QCw/exec';
-const NEEDS_API_VERSION = 35;
+const NEEDS_API_VERSION = 37;
 /* The package: 2 AI photos + 1 collage. Fixed here as well as on the server, so
    a phone holding an old cached config (or an older server) still shoots 2. */
 const SHOTS = 2;
@@ -3541,11 +3567,50 @@ async function drawLetter(x, Lt, g){
  * receipt is read by the same OCR as the booth), picked up the next day at
  * the School Canteen / Dining Hall, followed with a tracking number. The shop
  * sits on top of whatever the customer was doing, so the booth is untouched. */
-const SHOP_EMOJI = { Cakes:'🎂', Chocolates:'🍫', Flowers:'💐', Trophies:'🏆', Medals:'🏅',
+const SHOP_EMOJI = { Cards:'💌', Cakes:'🎂', Chocolates:'🍫', Flowers:'💐', Trophies:'🏆', Medals:'🏅',
                      Books:'📚', Novels:'📖', Others:'🎁' };
 const SHOP_CART_KEY = 'greetopia_cart', SHOP_ORDERS_KEY = 'greetopia_orders';
+/* Partner stores: their own site opens inside the Shop. Orders, payment and
+   pick-up there follow the partner's own process, not the Greetopia cart.
+   Staff add and edit partners in the admin (🔒 → Partners); the list below is
+   only used if the server has not sent its list yet. */
+const SHOP_PARTNERS_FALLBACK = [
+  { id:'P001', label:'Musical Instruments', emoji:'🎸', name:'Johnica Musical Instruments',
+    url:'https://codesphereph.github.io/JohnicaMusicalInstruments/',
+    icon:'https://codesphereph.github.io/JohnicaMusicalInstruments/icon-192.png',
+    blurb:'Guitars, violins, keyboards, ukuleles, drums and percussion.' },
+  { id:'P002', label:'HERO Kit', emoji:'🛡️', name:'HERO', url:'https://codesphereph.github.io/HERO/',
+    icon:'https://codesphereph.github.io/KA_Studio/hero_icon.png', blurb:'HERO kits — browse and order from the HERO store.' },
+  { id:'P003', label:'T-Shirt Printing', emoji:'👕', name:"EUAN's Art and Printing Shop",
+    url:'https://1stballph.github.io/EuansArtandPrintingShop/',
+    icon:'https://1stballph.github.io/EuansArtandPrintingShop/icon-192.png',
+    blurb:'Customized full-sublimation T-shirts, jerseys and uniforms, DTF, mug and tarpaulin printing, heat press and tailoring — made to your design.' },
+];
+function shopPartners(){ return (SHOP.data && Array.isArray(SHOP.data.partners)) ? SHOP.data.partners : SHOP_PARTNERS_FALLBACK; }
+/** Partner categories are keyed "@<id>", so labels can hold any character. */
+function shopPartner(cat){ return String(cat || '').charAt(0) === '@' ? shopPartners().filter(p => '@' + p.id === cat)[0] : null; }
 const SHOP = { data:null, loadedAt:0, cat:'All', cart:{}, receipt:'', busy:false };
 try { SHOP.cart = JSON.parse(localStorage.getItem(SHOP_CART_KEY) || '{}') || {}; } catch (e) {}
+/* The printed card: item PRINT in the shop, tied to the PIN of the card to print. */
+const PRINT_ID = 'PRINT', PRINT_REF_KEY = 'greetopia_print_ref';
+try { SHOP.printRef = localStorage.getItem(PRINT_REF_KEY) || ''; } catch (e) { SHOP.printRef = ''; }
+function savePrintRef(v){
+  SHOP.printRef = String(v || '').replace(/\D/g, '').slice(0, 6);
+  try { localStorage.setItem(PRINT_REF_KEY, SHOP.printRef); } catch (e) {}
+}
+/** "Add printed card · ₱50": puts this session's card in the cart and opens it. */
+function addPrintCard(){
+  if (S.pin) savePrintRef(S.pin);
+  const add = () => {
+    if (!shopItem(PRINT_ID)){ shopView('browse'); alert('Printed cards are not available right now. Please ask the staff.'); return; }
+    shopQty(PRINT_ID, 1);
+    shopView('cart');
+  };
+  const el = document.getElementById('shop');
+  el.classList.remove('on'); void el.offsetWidth; el.classList.add('on');
+  if (SHOP.data && Date.now() - SHOP.loadedAt < 60000){ shopRender(); add(); }
+  else shopLoad().then(add);
+}
 Promise.resolve().then(() => { try { shopBadge(); } catch (e) {} });
 
 function shopSaveCart(){ try { localStorage.setItem(SHOP_CART_KEY, JSON.stringify(SHOP.cart)); } catch (e) {} shopBadge(); }
@@ -3575,7 +3640,7 @@ function openShop(){
   if (!SHOP.data || Date.now() - SHOP.loadedAt > 60000) shopLoad();
   else shopRender();
 }
-function closeShop(){ document.getElementById('shop').classList.remove('on'); }
+function closeShop(){ closePartner(); document.getElementById('shop').classList.remove('on'); }
 
 function shopLoad(){
   return api('getShop').then(d => {
@@ -3606,13 +3671,18 @@ function shopView(v){
 function shopRender(){
   const d = SHOP.data; if (!d) return;
   const chips = document.getElementById('shopChips');
-  const cats = ['All'].concat(d.categories.filter(c => d.items.some(i => i.category === c)));
-  chips.innerHTML = cats.map(c => '<button class="' + (c === SHOP.cat ? 'on' : '') + '" onclick="shopCat(\'' + c + '\')">' +
-    (SHOP_EMOJI[c] ? SHOP_EMOJI[c] + ' ' : '') + c + '</button>').join('');
+  const cats = ['All'].concat(d.categories.filter(c => d.items.some(i => i.category === c)))
+    .concat(shopPartners().map(p => '@' + p.id));
+  chips.innerHTML = cats.map(c => { const pt = shopPartner(c);
+    return '<button class="' + (c === SHOP.cat ? 'on' : '') + '" onclick="shopCat(\'' + c + '\')">' +
+      (pt ? esc(pt.emoji) + ' ' + esc(pt.label) : (SHOP_EMOJI[c] ? SHOP_EMOJI[c] + ' ' : '') + c) + '</button>'; }).join('');
   const grid = document.getElementById('shopGrid');
+  const partner = shopPartner(SHOP.cat);
+  if (partner){ grid.innerHTML = partnerCard(partner, 0, true); shopBadge(); return; }
   if (!d.open){ grid.innerHTML = '<p class="warn">The shop is closed right now. Please come back later.</p>'; return; }
   const list = d.items.filter(i => SHOP.cat === 'All' || i.category === SHOP.cat);
-  grid.innerHTML = list.length ? list.map((it, n) => {
+  const tiles = SHOP.cat === 'All' ? shopPartners().map((p, k) => partnerCard(p, list.length + k, false)).join('') : '';
+  grid.innerHTML = (list.length || tiles) ? list.map((it, n) => {
     const q = SHOP.cart[it.id] || 0;
     return '<div class="sitem" style="--d:' + n + '">' +
       '<div class="simg">' + (SHOP_EMOJI[it.category] || '🎁') +
@@ -3625,12 +3695,49 @@ function shopRender(){
             '</b><button onclick="shopQty(\'' + it.id + '\',1)">+</button></span>'
           : '<button class="add" onclick="shopQty(\'' + it.id + '\',1)" aria-label="Add">+</button>') +
         '</div></div></div>';
-  }).join('') : '<p style="color:#6b7190">Nothing here yet.</p>';
+  }).join('') + tiles : '<p style="color:#6b7190">Nothing here yet.</p>';
   shopBadge();
 }
 function shopCat(c){ SHOP.cat = c; shopRender(); }
+
+/** A partner store: a tile in "All", or a full card in its own category. */
+function partnerCard(p, n, big){
+  const icon = p.icon ? '<img loading="lazy" alt="" src="' + esc(p.icon) + '" onerror="this.remove()"' : '';
+  if (!big) return '<div class="sitem" style="--d:' + n + ';cursor:pointer" onclick="shopCat(\'@' + esc(p.id) + '\')">' +
+    '<div class="simg" style="background:#eaf0ff">' + esc(p.emoji) +
+      (icon ? icon + ' style="object-fit:contain;padding:18%">' : '') + '</div>' +
+    '<div class="sinfo"><b>' + esc(p.label) + '</b><small>' + esc(p.name) + (p.blurb ? ' — ' + esc(p.blurb) : '') + '</small>' +
+    '<div class="sprice"><span style="font-size:13px">Visit store</span><button class="add" aria-label="Open">›</button></div></div></div>';
+  return '<div class="card" style="grid-column:1/-1;align-items:center;text-align:center;animation:pop .45s .3s both">' +
+    (icon ? icon + ' style="width:96px;height:96px;object-fit:contain;border-radius:22px;background:#fff;' +
+      'box-shadow:0 8px 20px rgba(27,46,122,.2)">' : '<div style="font-size:64px">' + esc(p.emoji) + '</div>') +
+    '<b style="font-size:18px;color:#1B2E7A">' + esc(p.name) + '</b>' +
+    '<span style="font-size:14px;color:#3b4266;line-height:1.5">' + esc(p.blurb || '') + '</span>' +
+    '<button class="sbtn bl" style="width:100%;padding:14px;font-size:15px" onclick="openPartner(\'' + esc(p.id) + '\')">' +
+      esc(p.emoji) + ' Shop ' + esc(p.label) + '</button>' +
+    '<span style="font-size:12px;color:#6b7190;line-height:1.45">A partner store of Greetopia. Orders, payment and ' +
+      'pick-up follow ' + esc(p.name) + '\u2019s own checkout.</span></div>';
+}
+
+/** Opens the partner's site inside the Shop, with a way back. */
+function openPartner(id){
+  const p = shopPartners().filter(x => x.id === id)[0]; if (!p) return;
+  let box = document.getElementById('shopPartner');
+  if (!box){
+    box = document.createElement('div');
+    box.id = 'shopPartner';
+    box.className = 'partner';
+    document.getElementById('shop').appendChild(box);
+  }
+  box.innerHTML = '<div class="pbar"><button class="sbtn" onclick="closePartner()">‹ Greetopia Shop</button>' +
+    '<b>' + esc(p.name) + '</b><a class="sbtn" href="' + esc(p.url) + '" target="_blank" rel="noopener">Open ↗</a></div>' +
+    '<iframe src="' + esc(p.url) + '" title="' + esc(p.name) + '" allow="clipboard-write; payment"></iframe>';
+  box.classList.add('on');
+}
+function closePartner(){ const b = document.getElementById('shopPartner'); if (b){ b.classList.remove('on'); b.innerHTML = ''; } }
 function shopQty(id, d){
   const it = shopItem(id); if (!it) return;
+  if (id === PRINT_ID && d > 0 && !SHOP.printRef && S.pin) savePrintRef(S.pin);
   let q = (SHOP.cart[id] || 0) + d;
   if (it.stock !== null && it.stock !== undefined) q = Math.min(q, it.stock);
   q = Math.max(0, Math.min(20, q));
@@ -3656,7 +3763,10 @@ function shopRenderCart(){
     '<div class="card">' + ids.map(k => { const it = shopItem(k);
       return '<div class="line"><span>' + (SHOP_EMOJI[it.category] || '🎁') + '</span><span class="n">' + esc(it.name) +
         '</span><span class="qty"><button onclick="shopQty(\'' + k + '\',-1)">−</button><b>' + SHOP.cart[k] +
-        '</b><button onclick="shopQty(\'' + k + '\',1)">+</button></span><span class="p">' + peso(it.price * SHOP.cart[k]) + '</span></div>';
+        '</b><button onclick="shopQty(\'' + k + '\',1)">+</button></span><span class="p">' + peso(it.price * SHOP.cart[k]) + '</span></div>' +
+        (k === PRINT_ID ? '<div style="display:flex;align-items:center;gap:8px;font-size:13px;color:#6b7190;margin:-2px 0 4px 28px">' +
+          'Card PIN to print <input id="printRef" inputmode="numeric" maxlength="6" style="width:120px;padding:8px;font-size:15px;letter-spacing:.15em" ' +
+          'value="' + esc(SHOP.printRef || '') + '" oninput="savePrintRef(this.value)" placeholder="123456"></div>' : '');
     }).join('') + '<div class="total"><span>Total</span><span>' + peso(total) + '</span></div></div>' +
     '<div class="card"><b>Pick-up</b><span style="font-size:14px;line-height:1.5">' + esc(d.place) + ' · <b>' +
       esc(d.pickupLabel) + '</b> (the next day). Bring your tracking number.</span></div>' +
@@ -3700,11 +3810,14 @@ function placeShopOrder(){
   const name = (SHOP.name || '').trim(), contact = (SHOP.contact || '').trim();
   if (name.length < 2){ warn.innerHTML = '<p class="warn">Please type your name.</p>'; return; }
   if (contact.replace(/\D/g, '').length < 10){ warn.innerHTML = '<p class="warn">Please type your mobile number.</p>'; return; }
+  if (SHOP.cart[PRINT_ID] && !/^\d{6}$/.test(SHOP.printRef || '')){
+    warn.innerHTML = '<p class="warn">Type the 6-digit PIN of the card you want printed.</p>'; return;
+  }
   const btn = document.getElementById('shopPlace');
   SHOP.busy = true; btn.disabled = true; btn.textContent = 'Reading your receipt…'; warn.innerHTML = '';
   api('placeOrder', {
     deviceId: DEVICE, name: name, contact: contact, note: SHOP.note || '',
-    items: Object.keys(SHOP.cart).map(k => ({ id: k, qty: SHOP.cart[k] })),
+    items: Object.keys(SHOP.cart).map(k => ({ id: k, qty: SHOP.cart[k], ref: k === PRINT_ID ? SHOP.printRef : '' })),
     imageDataUrl: SHOP.receipt
   }).then(r => {
     SHOP.busy = false;
@@ -3783,6 +3896,7 @@ function adminSection(sec){
   document.getElementById('adminShopBar').style.display = pay ? 'none' : '';
   if (sec === 'items') adminItems();
   if (sec === 'orders') adminOrders();
+  if (sec === 'partners') adminPartners();
   if (pay) adminLoad(true);
 }
 
@@ -3850,6 +3964,81 @@ function adminSaveItem(){
   }).catch(e => alert(e.message));
 }
 
+/* ---- staff: partner stores ---- */
+function adminPartners(){
+  document.getElementById('adminShopBar').innerHTML =
+    '<button class="btn gold" style="width:auto;padding:8px 14px;font-size:13px" onclick="adminEditPartner(null)">+ Add partner store</button>' +
+    ' <span style="font-size:12px">Partner stores open inside the Shop; they handle their own orders.</span>';
+  document.getElementById('adminShop').innerHTML = '<p class="note">Loading partners…</p>';
+  api('adminPartners', { token: ADMIN.token }).then(list => { ASHOP.partners = list; adminRenderPartners(); })
+    .catch(e => document.getElementById('adminShop').innerHTML = '<p class="banner">' + esc(e.message) + '</p>');
+}
+function adminRenderPartners(){
+  const el = document.getElementById('adminShop');
+  el.innerHTML = (ASHOP.pedit ? adminPartnerForm(ASHOP.pedit) : '') + (ASHOP.partners || []).map(p =>
+    '<div class="aitem"><div class="th" style="background:#fff">' + (p.logo ? '<img src="' + esc(p.logo) + '" alt="" style="object-fit:contain">' : esc(p.emoji)) + '</div>' +
+    '<div class="tx"><b>' + esc(p.emoji) + ' ' + esc(p.label) + '</b><br>' + esc(p.name) +
+      (p.active ? '' : ' · <span style="color:var(--bad)">hidden</span>') + '<br><span style="font-size:11.5px">' + esc(p.url) + '</span></div>' +
+    '<button class="btn quiet" style="width:auto;padding:8px 12px;font-size:13px" onclick="adminEditPartner(\'' + esc(p.id) + '\')">Edit</button></div>'
+  ).join('') || '<p class="note">No partner stores yet.</p>';
+}
+function adminPartnerForm(p){
+  return '<div class="aform"><b>' + (p.id ? 'Edit partner store' : 'New partner store') + '</b>' +
+    '<div class="r2"><input class="payinput" id="apEmoji" placeholder="Emoji" maxlength="8" style="flex:0 0 76px;text-align:center;font-size:20px" value="' + esc(p.emoji || '') + '">' +
+    '<input class="payinput" id="apLabel" placeholder="Label in the Shop (e.g. Musical Instruments)" value="' + esc(p.label || '') + '"></div>' +
+    '<input class="payinput" id="apName" placeholder="Store name (e.g. Johnica Musical Instruments)" value="' + esc(p.name || '') + '">' +
+    '<input class="payinput" id="apUrl" inputmode="url" placeholder="Link — https://…" value="' + esc(p.url || '') + '">' +
+    '<div class="r2"><input class="payinput" id="apLogo" inputmode="url" placeholder="Logo link — https://… (or upload)" value="' + esc(p.logo || '') + '">' +
+    '<label class="btn quiet" style="flex:0 0 auto;width:auto;padding:10px 12px;font-size:13px">Upload logo' +
+      '<input type="file" accept="image/*" style="display:none" onchange="adminPartnerLogo(this)"></label></div>' +
+    (p.logo ? '<img src="' + esc(p.logo) + '" alt="" style="height:64px;width:64px;object-fit:contain;background:#fff;border-radius:12px">' : '') +
+    '<textarea class="payinput" id="apBlurb" rows="2" placeholder="One line about the store">' + esc(p.blurb || '') + '</textarea>' +
+    '<div class="r2"><label style="display:flex;align-items:center;gap:6px;font-size:14px"><input type="checkbox" id="apActive"' +
+      (p.active === false ? '' : ' checked') + '> Show in the Shop</label>' +
+    '<input class="payinput" id="apSort" inputmode="numeric" placeholder="Order (1, 2, 3…)" value="' + (p.sort && p.sort < 999 ? p.sort : '') + '"></div>' +
+    '<div class="r2"><button class="btn gold" onclick="adminSavePartner()">Save partner</button>' +
+    '<button class="btn quiet" onclick="adminTestPartner()">Test link</button>' +
+    '<button class="btn quiet" onclick="ASHOP.pedit=null;adminRenderPartners()">Cancel</button></div></div>';
+}
+function adminEditPartner(id){
+  const p = id ? (ASHOP.partners || []).filter(x => x.id === id)[0] : { emoji:'🏬', active:true };
+  ASHOP.pedit = Object.assign({}, p);
+  adminRenderPartners();
+  document.getElementById('adminShop').scrollTop = 0;
+}
+function adminPartnerRead(){
+  const e = ASHOP.pedit;
+  e.emoji = document.getElementById('apEmoji').value; e.label = document.getElementById('apLabel').value;
+  e.name = document.getElementById('apName').value; e.url = document.getElementById('apUrl').value.trim();
+  e.logo = document.getElementById('apLogo').value.trim(); e.blurb = document.getElementById('apBlurb').value;
+  e.active = document.getElementById('apActive').checked; e.sort = document.getElementById('apSort').value;
+}
+function adminPartnerLogo(input){
+  const f = input.files && input.files[0]; if (!f) return;
+  adminPartnerRead();
+  const url = URL.createObjectURL(f), im = new Image();
+  im.onload = () => {
+    const k = Math.min(1, 512 / Math.max(im.width, im.height));
+    const c = document.createElement('canvas'); c.width = Math.round(im.width * k); c.height = Math.round(im.height * k);
+    c.getContext('2d').drawImage(im, 0, 0, c.width, c.height); URL.revokeObjectURL(url);
+    api('adminItemImage', { token: ADMIN.token, imageDataUrl: c.toDataURL('image/png'), name: 'partner_' + (ASHOP.pedit.label || 'logo') })
+      .then(r => { ASHOP.pedit.logo = r.url; adminRenderPartners(); })
+      .catch(e => alert('Logo not saved: ' + e.message));
+  };
+  im.src = url;
+}
+function adminTestPartner(){
+  adminPartnerRead();
+  if (!/^https:\/\//i.test(ASHOP.pedit.url || '')){ alert('The link must start with https://'); return; }
+  window.open(ASHOP.pedit.url, '_blank', 'noopener');
+}
+function adminSavePartner(){
+  adminPartnerRead();
+  api('adminSavePartner', { token: ADMIN.token, partner: ASHOP.pedit }).then(list => {
+    ASHOP.partners = list; ASHOP.pedit = null; SHOP.loadedAt = 0; adminRenderPartners();
+  }).catch(e => alert(e.message));
+}
+
 const ORDER_FILTERS = [['ACTIVE', 'Open'], ['PAYMENT', 'Payment check'], ['TODAY', 'Pick-up today'],
                        ['TOMORROW', 'Tomorrow'], ['ALL', 'All']];
 function adminOrders(){
@@ -3876,6 +4065,8 @@ function adminRenderOrders(){
         (o.refNo ? ' · ref ' + esc(o.refNo) : '') + '<br>Pick-up <b>' + esc(o.pickupLabel) + '</b> · ordered ' + esc(o.time) +
         (o.note ? '<br>Customer note: ' + esc(o.note) : '') + (o.check ? '<br>OCR: ' + esc(o.check) : '') + '</div>' +
       (o.receiptId ? '<button class="btn quiet slim" onclick="adminReceipt(\'' + o.receiptId + '\')">View GCash receipt</button>' : '') +
+      ((o.items.match(/card PIN (\d{6})/g) || []).map(m => { const pin = m.slice(-6);
+        return '<button class="btn quiet slim" onclick="window.open(\'download.html?pin=' + pin + '\',\'_blank\')">💌 Open card ' + pin + ' to print</button>'; }).join('')) +
       (o.payStatus === 'PENDING'
         ? '<div class="pacts">' + '<button class="btn okb" onclick="adminPayOrder(\'' + o.tracking + '\',\'PAID\')">Payment OK</button>' +
           '<button class="btn badb" onclick="adminPayOrder(\'' + o.tracking + '\',\'REJECTED\')">Reject payment</button></div>' : '') +
