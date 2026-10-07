@@ -177,6 +177,26 @@
   .shop .partner iframe{flex:1;width:100%;border:0}
   @media (prefers-reduced-motion:reduce){.shop.on,.shop .awning,.shop .sitem,.shop .pick{animation:none}}
 
+  /* ---- install banner (first opening only) ---- */
+  .install{position:fixed;left:12px;right:12px;bottom:calc(env(safe-area-inset-bottom) + 12px);z-index:66;display:none;
+    max-width:496px;margin:0 auto;background:#fff;color:#1d2340;border-radius:22px;padding:16px;
+    box-shadow:0 18px 50px rgba(20,17,39,.35);font-family:'Inter',sans-serif}
+  .install.on{display:block;animation:instIn .6s cubic-bezier(.2,1.3,.4,1) both}
+  .install.off{animation:instOut .35s ease-in both}
+  @keyframes instIn{from{transform:translateY(130%);opacity:0}to{transform:none;opacity:1}}
+  @keyframes instOut{to{transform:translateY(130%);opacity:0}}
+  .install .ih{display:flex;gap:12px;align-items:center}
+  .install .ih img{width:56px;height:56px;border-radius:16px;box-shadow:0 4px 12px rgba(0,0,0,.12);animation:wig 1s .7s ease}
+  .install .ih b{font-size:17px;color:#17398C}
+  .install .ih p{margin:2px 0 0;font-size:13.5px;line-height:1.45;color:#4E5577}
+  .install .ix{position:absolute;top:8px;right:10px;border:0;background:none;font-size:22px;color:#9aa0b8;cursor:pointer}
+  .install .ib{display:flex;gap:8px;margin-top:12px}
+  .install .ib button{flex:1;border:0;border-radius:999px;padding:12px;font:700 15px 'Inter',sans-serif;cursor:pointer}
+  .install .go{background:linear-gradient(135deg,#EE3F8A,#7B5CF0);color:#fff}
+  .install .later{background:#f1f3fa;color:#17398C}
+  .install .ios{margin-top:12px;background:#f6f7fc;border-radius:14px;padding:10px 12px;font-size:14px;line-height:1.6;color:#2b3150}
+  @media (prefers-reduced-motion:reduce){.install.on,.install.off,.install .ih img{animation:none}}
+
   /* ---- Mompreneur + Rider portal ---- */
   .top .portbtn{width:34px;height:34px;flex:none;border:0;border-radius:50%;cursor:pointer;font-size:17px;
     background:linear-gradient(135deg,#FFC93C,#FF8A3D);box-shadow:0 4px 12px rgba(255,138,61,.35)}
@@ -1024,6 +1044,23 @@
 
 </div>
 
+<!-- Install banner (first opening only) -->
+<div class="install" id="installBar" role="dialog" aria-label="Install Greetopia">
+  <button class="ix" onclick="installDismiss()" aria-label="Close">×</button>
+  <div class="ih"><img src="data:image/png;base64,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" alt="Greetopia">
+    <div><b>Install Greetopia</b>
+      <p>Add it to your home screen — open your cards, the Shop and your orders in one tap.</p></div></div>
+  <div class="ib" id="installBtns">
+    <button class="later" onclick="installDismiss()">Not now</button>
+    <button class="go" onclick="installNow()">Install</button>
+  </div>
+  <div class="ios" id="installIos" style="display:none">
+    1. Tap the <b>Share</b> button <span style="font-size:17px">⬆️</span> at the bottom of Safari<br>
+    2. Scroll down and tap <b>Add to Home Screen</b> ➕<br>
+    3. Tap <b>Add</b>
+  </div>
+</div>
+
 <!-- Mompreneur + Rider portal -->
 <div class="portal" id="portal" role="dialog" aria-modal="true">
   <div class="phead"><h2 id="portTitle">Partner portal</h2>
@@ -1265,7 +1302,7 @@ const CPU_THUMB_LANDSCAPE = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/
    Paste your Apps Script /exec URL below. Same URL as download.html.
    ══════════════════════════════════════════════════════════ */
 const API_URL = 'https://script.google.com/macros/s/AKfycbwpIg9O4iA-jCMN2HWIVMFgnwnl_piIRfpL6AokEOwjfJE5Oros6bxvdqKOWGa9FD8QCw/exec';
-const NEEDS_API_VERSION = 43;
+const NEEDS_API_VERSION = 44;
 /* The package: 2 AI photos + 1 collage. Fixed here as well as on the server, so
    a phone holding an old cached config (or an older server) still shoots 2. */
 const SHOTS = 2;
@@ -4236,17 +4273,17 @@ function shopRenderCart(){
         ' <button class="sbtn" style="padding:4px 10px;font-size:12px" onclick="navigator.clipboard&&navigator.clipboard.writeText(\'' + P.number + '\')">Copy</button>' +
         (bk ? '<br>or to BPI BanKo <b>' + esc(bk.account) + '</b>' + (bk.name ? ' (' + esc(bk.name) + ')' : '') +
           (bk.qr ? '<br><img src="' + esc(bk.qr) + '" alt="BanKo QR Ph" style="width:160px;height:160px;margin-top:6px;border-radius:8px">' : '') : '') +
-        (manualReceipts() ? ', then upload the screenshot of your receipt and type its reference number.</div>' +
-          '<input id="shopRef" inputmode="numeric" maxlength="20" placeholder="GCash reference no. (13 digits)" value="' +
-          esc(SHOP.ref || '') + '" oninput="SHOP.ref=this.value">'
+        (manualReceipts() ? ', then upload the screenshot of your receipt and type its reference number.</div>'
           : ', then upload the screenshot of your receipt — we read it automatically.</div>') +
+        '<input id="shopRef" maxlength="20" placeholder="GCash reference no. (' + (manualReceipts() ? '13 digits' : 'optional') +
+          ')" value="' + esc(SHOP.ref || '') + '" oninput="SHOP.ref=this.value;document.getElementById(\'shopPlace\').disabled=!(SHOP.receipt||isDemoRef(SHOP.ref))">' +
       '<label class="sbtn" style="text-align:center">' + (SHOP.receipt ? 'Choose a different screenshot' : 'Upload GCash screenshot') +
         '<input type="file" accept="image/*" style="display:none" onchange="shopReceipt(this)"></label>' +
       (SHOP.receipt ? '<img src="' + SHOP.receipt + '" alt="" style="max-height:220px;object-fit:contain;border-radius:10px">' : '') +
     '</div>' +
     '<div id="shopWarn"></div>' +
     '<button class="sbtn bl" style="width:100%;padding:15px;font-size:16px" id="shopPlace" onclick="placeShopOrder()"' +
-      (SHOP.receipt ? '' : ' disabled') + '>Place order · ' + peso(total) + '</button>';
+      (SHOP.receipt || isDemoRef(SHOP.ref) ? '' : ' disabled') + '>Place order · ' + peso(total) + '</button>';
   ['shopName', 'shopContact', 'shopNote'].forEach(id => document.getElementById(id).addEventListener('input', e => {
     SHOP[id === 'shopName' ? 'name' : id === 'shopContact' ? 'contact' : 'note'] = e.target.value;
   }));
@@ -4295,7 +4332,7 @@ function placeShopOrder(){
   if ((SHOP.cart[PRINT_ID] || SHOP.cart[REEL_ID]) && !/^\d{6}$/.test(SHOP.printRef || '')){
     warn.innerHTML = '<p class="warn">Type the 6-digit PIN of your card.</p>'; return;
   }
-  if (manualReceipts() && !validRef(SHOP.ref)){
+  if (!isDemoRef(SHOP.ref) && manualReceipts() && !validRef(SHOP.ref)){
     warn.innerHTML = '<p class="warn">Please type the reference number from your GCash receipt (usually 13 digits).</p>'; return;
   }
   if (SHOP.ship === 'DELIVER' && !Object.keys(SHOP.cart).every(k => k === REEL_ID)){
@@ -4309,7 +4346,7 @@ function placeShopOrder(){
   api('placeOrder', {
     deviceId: DEVICE, name: name, contact: contact, note: SHOP.note || '',
     items: Object.keys(SHOP.cart).map(k => ({ id: k, qty: SHOP.cart[k], ref: (k === PRINT_ID || k === REEL_ID) ? SHOP.printRef : '' })),
-    imageDataUrl: SHOP.receipt, refNo: SHOP.ref || '',
+    imageDataUrl: isDemoRef(SHOP.ref) ? '' : SHOP.receipt, refNo: SHOP.ref || '',
     cardPin: S.pin || (/^\d{6}$/.test(SHOP.printRef || '') ? SHOP.printRef : ''),
     delivery: SHOP.ship === 'DELIVER' ? 'DELIVER' : 'PICKUP',
     deliverTo: SHOP.dTo || '', address: SHOP.dAddr || '', deliverContact: SHOP.dTel || '',
@@ -5119,6 +5156,8 @@ function adminSetEvent(){
 function openAdmin(){
   fillAdminEvents();
   adminRcBar();
+  adminDemoBar();
+  api('adminDemoStatus', { token: ADMIN.token }).then(adminDemoBar).catch(() => {});
   adminSection(ASHOP.sec || 'pay');
   document.getElementById('adminPanel').classList.add('on');
   adminLoad(true);
@@ -5153,6 +5192,24 @@ function adminLoad(show){
 }
 
 /** Receipt check switch: OCR (AI, small cost per receipt) or Manual (free, staff approve all). */
+/** Demo mode for pitches: the code DEMO skips payment for 4 hours, then turns itself off. */
+function adminDemoBar(st){
+  if (st) ADMIN.demo = st;
+  const d = ADMIN.demo || { on: false, code: 'DEMO' };
+  let el = document.getElementById('adminDemoBar');
+  if (!el){ el = document.createElement('div'); el.id = 'adminDemoBar'; el.className = 'ainfo';
+    el.style.cssText = 'display:flex;gap:6px;align-items:center;flex-wrap:wrap';
+    document.getElementById('adminRcBar').after(el); }
+  el.innerHTML = '<span>🎬 Demo mode:</span><button class="btn ' + (d.on ? 'gold' : 'quiet') +
+    '" style="width:auto;padding:7px 11px;font-size:12.5px" onclick="adminSetDemo(' + !d.on + ')">' + (d.on ? 'ON — tap to turn off' : 'OFF — tap to turn on') + '</button>' +
+    '<span style="font-size:11.5px;width:100%">' + (d.on ? 'Type <b>' + esc(d.code) + '</b> as the GCash reference to skip payment. Turns off by itself at ' + esc(d.until) + '.'
+      : 'For pitch presentations: while ON, typing ' + esc(d.code) + ' as the GCash reference skips payment.') + '</span>';
+}
+function adminSetDemo(on){
+  if (on && !confirm('Turn ON demo mode for 4 hours? Anyone who types the demo code can make a card without paying.')) return;
+  api('adminSetDemo', { token: ADMIN.token, on: on }).then(adminDemoBar).catch(e => alert(e.message));
+}
+
 function adminRcBar(mode){
   ADMIN.rc = mode || ADMIN.rc || (CFG.payment || {}).receiptCheck || 'OCR';
   const b = (m, t) => '<button class="btn ' + (ADMIN.rc === m ? 'gold' : 'quiet') +
@@ -5277,7 +5334,11 @@ function manualReceipts(){
 function validRef(v){ const d = String(v || '').replace(/\D/g, ''); return d.length >= 10 && d.length <= 16; }
 function applyReceiptMode(){
   const man = manualReceipts();
-  document.getElementById('payRef').style.display = man ? '' : 'none';
+  const pr = document.getElementById('payRef');
+  pr.style.display = '';
+  pr.placeholder = man ? 'GCash reference no. (13 digits)' : 'GCash reference no. (optional)';
+  pr.oninput = () => { if (isDemoRef(pr.value)) document.getElementById('paySubmit').disabled = false;
+                       else document.getElementById('paySubmit').disabled = !payImage; };
   document.getElementById('payStep3').textContent = man
     ? 'Screenshot the receipt, upload it here and type its reference number (Ref No.).'
     : 'Screenshot the receipt and upload it here — we read it automatically.';
@@ -5450,11 +5511,14 @@ function pickPayFile(input){
   im.src = url;
 }
 
+/** The pitch-demo code (server checks it, and only while demo mode is on). */
+function isDemoRef(v){ return String(v || '').trim().toUpperCase() === 'DEMO'; }
 function submitPayment(){
-  if (!payImage) return;
+  const demo = isDemoRef(document.getElementById('payRef').value);
+  if (!payImage && !demo) return;
   const btn = document.getElementById('paySubmit');
   const warn = document.getElementById('payWarn');
-  if (manualReceipts() && !validRef(document.getElementById('payRef').value)){
+  if (!demo && manualReceipts() && !validRef(document.getElementById('payRef').value)){
     warn.style.display = 'block';
     warn.textContent = 'Please type the reference number from your GCash receipt (usually 13 digits).';
     return;
@@ -5462,9 +5526,9 @@ function submitPayment(){
   btn.disabled = true; btn.textContent = manualReceipts() ? 'Sending…' : 'Reading your receipt…'; warn.style.display = 'none';
   const ref = document.getElementById('payRef').value.trim();
   (PAY_MODE === 'prepay'
-    ? api('submitPrepay', { pin: PREPAY_PIN, deviceId: DEVICE, imageDataUrl: payImage, refNo: ref })
+    ? api('submitPrepay', { pin: PREPAY_PIN, deviceId: DEVICE, imageDataUrl: demo ? '' : payImage, refNo: ref })
     : api('submitPayment', { pin: S.pin, sessionId: S.sessionId, deviceId: DEVICE,
-                             imageDataUrl: payImage, refNo: ref })
+                             imageDataUrl: demo ? '' : payImage, refNo: ref })
   ).then(r => {
     btn.textContent = 'Send for verification';
     if (PAY_MODE === 'prepay' && r && r.pin){
@@ -5616,16 +5680,48 @@ function esc(s){
     ({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[c]));
 }
 
-/* ---------- PWA, without the nagging ----------
- * The booth is a single-use page: a PIN is spent, the photos are downloaded and
- * the session closes. Inviting somebody to install that is worse than useless —
- * they would end up with an icon that leads to an expired session. So the app
- * is a well-behaved web app (manifest, icons, standalone display if somebody
- * adds it themselves) but the install prompt is suppressed on sight.
- */
+/* ---------- Install banner: shown once, on the first opening ----------
+ * Android / Chrome: the browser's own install prompt, started from our Install
+ * button. iPhone / iPad (Safari): it cannot be installed by a button, so the
+ * banner shows the three Share → Add to Home Screen steps instead.
+ * Never shown when Greetopia is already installed, inside Facebook / Messenger /
+ * Instagram (they cannot install apps), or a second time on the same phone. */
+const INSTALL_KEY = 'greetopia_install_seen';
+let installEvt = null;
+function installSeen(){ try { return !!localStorage.getItem(INSTALL_KEY); } catch (e) { return true; } }
+function installMark(){ try { localStorage.setItem(INSTALL_KEY, String(Date.now())); } catch (e) {} }
+function isStandalone(){ return (window.matchMedia && matchMedia('(display-mode: standalone)').matches) || navigator.standalone === true; }
+function inAppBrowser(){ return /FBAN|FBAV|FB_IAB|Messenger|Instagram|Line\/|MicroMessenger/i.test(navigator.userAgent); }
+function isIos(){ return /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1); }
+function installShow(ios){
+  if (installSeen() || isStandalone() || inAppBrowser()) return;
+  installMark();
+  const bar = document.getElementById('installBar');
+  document.getElementById('installBtns').style.display = ios ? 'none' : 'flex';
+  document.getElementById('installIos').style.display = ios ? 'block' : 'none';
+  bar.classList.remove('off'); bar.classList.add('on');
+}
+function installDismiss(){
+  const bar = document.getElementById('installBar');
+  bar.classList.add('off');
+  setTimeout(() => bar.classList.remove('on', 'off'), 380);
+}
+function installNow(){
+  if (!installEvt){ installDismiss(); return; }
+  installEvt.prompt();
+  installEvt.userChoice.finally(() => { installEvt = null; installDismiss(); });
+}
 window.addEventListener('beforeinstallprompt', e => {
-  e.preventDefault();          // no mini-infobar, no "Add to Home screen"
-  return false;
+  e.preventDefault();                       // our banner instead of the browser's mini-bar
+  installEvt = e;
+  setTimeout(() => installShow(false), 2500);
+});
+window.addEventListener('appinstalled', () => { installMark(); installDismiss(); });
+window.addEventListener('load', () => {
+  // iPhone Safari never sends beforeinstallprompt: show the steps instead.
+  if (isIos() && /Safari/i.test(navigator.userAgent) && !/CriOS|FxiOS|EdgiOS/i.test(navigator.userAgent)) {
+    setTimeout(() => installShow(true), 2500);
+  }
 });
 
 /* The service worker only smooths over a few seconds of bad venue wifi — it is
